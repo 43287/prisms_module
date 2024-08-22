@@ -333,9 +333,10 @@ def addchar(s,flag,i,char):
 pyc代码/code对象文件转字节码
 
 '''
-from marshal import loads
-from dis import dis
+
 def scode(inputfile,outputfile=None):
+    from marshal import loads
+    from dis import dis
     fp = open(inputfile,"rb")
     data = fp.read()
     try:
@@ -380,8 +381,9 @@ def de64(edata, ctable=None):
 
 #取md5字符串,还用解释吗
 #如果参数2是1，求逆序str的md5
-import hashlib
+
 def pmd5(input_string, reverse_flag=0):
+    import hashlib
     if reverse_flag == 1:
         input_string = input_string[::-1]
     md5_hash = hashlib.md5()
@@ -425,9 +427,10 @@ def exgcd(a, b):
 #-----------------------------------
 #pwn
 
-from pwn import *
+
 
 def pwnini64(file_name, lib_name):
+    from pwn import *
     context(os='linux', arch='amd64', log_level='debug')
     e = ELF(file_name)
     
@@ -440,6 +443,7 @@ def pwnini64(file_name, lib_name):
     libc = ELF(lib_name)
     return p,libc,e
 def pwnini32(file_name, lib_name):
+    from pwn import *
     context(os='linux', arch='i386', log_level='debug')
     e = ELF(file_name)
     
@@ -537,10 +541,11 @@ def Sxor_factor(n, p_xor_q):
 # 获取一个列表的元素所有可能的乘积组合(用于找正确的因数)
 # 输入一个数的列表和一个检查函数(可选),检查函数需要在检查通过时返回真，否则返回假
 # 返回那个数的列表的所有可能乘积
-from functools import reduce
-from operator import mul
-import requests
+
+
 def get_comb(nums, check_fn=None):
+    from functools import reduce
+    from operator import mul
     result = []
     for r in range(2, len(nums) + 1):
         for combo in combinations(nums, r):
@@ -554,6 +559,7 @@ def get_comb(nums, check_fn=None):
 # 输入一个数
 # 输出那个数的因数列表
 def fetch_factors(number):
+    import requests
     def parse_factors(factor_string):
         factor_parts = factor_string.split(' ')
         if factor_parts[len(factor_parts)-1] == '':
