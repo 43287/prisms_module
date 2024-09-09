@@ -258,11 +258,11 @@ def geti(input_data, reference_list):
 
 #该函数将一个大的hex分割成小的值，返回整个列表
 '''
-输入hex列表,返回变成byte的列表并打印
-
+输入hex数字列表,返回变成byte的列表并打印
+remove_zero表示是否移除所有的0值
 
 '''
-def hextbyte(hex_list, reverse=False):
+def hextbyte(hex_list, reverse=False,remove_zero = False,is_print = False):
     byte_list = []
     for idx, hex_num in enumerate(hex_list):
         bit_length = hex_num.bit_length()
@@ -270,10 +270,11 @@ def hextbyte(hex_list, reverse=False):
         bytes = [(hex_num >> (i * 8)) & 0xFF for i in range(byte_length)]
         if reverse:
             bytes = bytes[::-1]
-            if idx == len(hex_list) - 1 and bit_length % 8 != 0:
+            if remove_zero and idx == len(hex_list) - 1 and bit_length % 8 != 0:
                 bytes = list(filter(lambda x: x != 0, bytes))
         byte_list.extend(bytes)
-        print(f'{[hex(b) for b in bytes]}')
+        if is_print:
+            print(f'{[hex(b) for b in bytes]}')
     return byte_list
 
 
@@ -300,13 +301,13 @@ def oe(inpu):
 #z3初始化flag和out
 #如果遇到mod，好像只写8有问题，不理解
 def zini(length):
-    from z3 import *
+    from z3 import BitVec
     flag = [BitVec('flag[%d]' % i, 9) for i in range(length)]
     out = cal(flag)  
     return flag, out
 #z3检查终值
 def zcheck(f,flag):
-    from z3 import *
+    from z3 import SolverObj,Solver
     print(f.check())
     while(f.check()==sat):
         condition = []
@@ -319,13 +320,13 @@ def zcheck(f,flag):
         f.add(Or(condition))
 #规定字符范围，可以提高速度
 def isflag(f,flag):
-    from z3 import *
+    from z3 import SolverObj,Solver
     for i in range(len(flag)):
         f.add(And(flag[i]>31,flag[i]<129))
 
 #为某一位添加约束
 def addchar(s,flag,i,char):
-    from z3 import *
+    from z3 import SolverObj,Solver
     s.add(flag[i]==ord(char))
 
 
@@ -430,7 +431,7 @@ def exgcd(a, b):
 
 
 def pwnini64(file_name, lib_name):
-    from pwn import *
+    from pwn import ELF,context,remote,process
     context(os='linux', arch='amd64', log_level='debug')
     e = ELF(file_name)
     
@@ -443,7 +444,7 @@ def pwnini64(file_name, lib_name):
     libc = ELF(lib_name)
     return p,libc,e
 def pwnini32(file_name, lib_name):
-    from pwn import *
+    from pwn import ELF,context,remote,process
     context(os='linux', arch='i386', log_level='debug')
     e = ELF(file_name)
     
