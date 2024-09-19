@@ -152,6 +152,23 @@ def generate(char_set, length, prefix=None):
 
 
 
+'''
+爆破flag。传入最后检查列表，传入检查函数，传入一次爆破字节数(默认为1)
+传出flag字符串。
+check_function要求第一个参数是检查列表，第二个是本次爆破的位数i，第三个是本次爆破的字符串
+返回检查是否成功，成功返回True，否则返回False
+'''
+def burst(final_list, check_function,num_bytes=1):
+    def generate_byte_combinations(num_bytes):
+        for byte_values in product(range(32, 128), repeat=num_bytes):
+            yield bytes(byte_values).decode('ascii')
+
+    flag = []
+    for i in range(0,len(final_list),num_bytes):
+        for byte_combination in generate_byte_combinations(num_bytes):
+            if check_function(final_list,i, byte_combination):
+                flag.append(byte_combination)
+    return ''.join(flag)
 
 
 
@@ -350,12 +367,39 @@ def scode(inputfile,outputfile=None):
             f.write(out)
 
 
+'''
+传入迷宫列表和行列，输出迷宫图
+
+'''
+def pmaze(maze,row,col):
+    length=len(maze)
+    block = row*col
+    for k in range(0,length,block):
+        for i in range(row): 
+            for j in range(col):
+                print(str(maze[k+i*col+j]),end="")
+            print()
+        print()
+
+
 
 
 '''
 以下是其它工具
 
 '''
+
+# 递归遍历
+class Maze_cracker:
+    class Map:
+        def __init__(self,map_data,goway) -> None:
+            self.map_data = map_data
+            self.goway = goway
+            
+    def __init__(self,map,max_len) -> None:
+        self.map = map
+        self.max_len = max_len
+
 
 
 #自定义base64解码
@@ -481,7 +525,7 @@ def bl(n):
     return bytes_to_long(n)
 def pflag(n):
     flag = lb(n)
-    print(flag)
+    print(flag.decode())
     return flag
 def Srsa(p,q,e,c):
     phi = (p-1)*(q-1)
@@ -489,6 +533,8 @@ def Srsa(p,q,e,c):
     m = pow(c,d,p*q)
     m_ = long_to_bytes(m)
     print(m_)
+    return m
+    
     
 # 已知和和差，求p,q 
 def Ssumdiff(sum,dif):
