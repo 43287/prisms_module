@@ -101,8 +101,255 @@ class cal(list):
         else:
             return super().__getitem__(index)
 
+class Encflag:
+    def __init__(self, flag):
+        self.encflag = flag
+        self.encflag_len = len(flag)
+        self.flag_bytes = bytes(flag, encoding='utf-8')
+        self.flag_bytes_len = len(self.flag_bytes)
+    def pl(self):
+        return pl(self.encflag)
 
+class Hooker:
+    def __init__(self, obj, origin_func):
+        self.obj = obj
+        self.origin_func = origin_func
+        self.cont = 0
+        self.original_func_name = ""
 
+    def setHook(self, hook_func=None):
+        self.original_func_name = f"original_{self.origin_func.__name__}_{self.cont}"
+        self.cont += 1
+        setattr(self.obj, self.original_func_name, getattr(self.obj, self.origin_func.__name__))
+        if hook_func is None:
+            hook_func = self.hookEntry
+        setattr(self.obj, self.origin_func.__name__, hook_func.__get__(self.obj, self.obj.__class__))
+
+    def endHook(self):
+        setattr(self.obj, self.origin_func.__name__, getattr(self.obj, self.original_func_name))
+
+    def hookEntry(self, *args, **kwargs):
+        def modeficed_start(*args, **kwargs):
+            print("Arguments:", args)
+            print("Keyword Arguments:", kwargs)
+        modeficed_start(*args, **kwargs)
+        ret = self.origin_func(*args, **kwargs)
+        print(ret)
+        return ret
+# 实现对数的自动模运算 
+class TeaDec:
+    def __init__(self, value, mask=0xffffffff):
+        if not isinstance(value, int):
+            raise ValueError("Value must be an integer")
+        self.value = value & mask
+        self.mask = mask
+
+    def __add__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        return TeaDec((self.value + other.value) & self.mask, self.mask)
+
+    def __iadd__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        self.value = (self.value + other.value) & self.mask
+        return self
+
+    def __radd__(self, other):
+        return self + other
+
+    def __sub__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        return TeaDec((self.value - other.value) & self.mask, self.mask)
+
+    def __isub__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        self.value = (self.value - other.value) & self.mask
+        return self
+
+    def __rsub__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        return TeaDec((other.value - self.value) & self.mask, self.mask)
+
+    def __mul__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        return TeaDec((self.value * other.value) & self.mask, self.mask)
+
+    def __imul__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        self.value = (self.value * other.value) & self.mask
+        return self
+
+    def __rmul__(self, other):
+        return self * other
+
+    def __truediv__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        if other.value == 0:
+            raise ZeroDivisionError("Cannot divide by zero")
+        return TeaDec(self.value // other.value, self.mask)
+
+    def __itruediv__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        if other.value == 0:
+            raise ZeroDivisionError("Cannot divide by zero")
+        self.value = self.value // other.value
+        return self
+
+    def __rtruediv__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        if self.value == 0:
+            raise ZeroDivisionError("Cannot divide by zero")
+        return TeaDec(other.value // self.value, self.mask)
+
+    def __mod__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        if other.value == 0:
+            raise ZeroDivisionError("Cannot modulo by zero")
+        return TeaDec(self.value % other.value, self.mask)
+
+    def __imod__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        if other.value == 0:
+            raise ZeroDivisionError("Cannot modulo by zero")
+        self.value = self.value % other.value
+        return self
+
+    def __rmod__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        if self.value == 0:
+            raise ZeroDivisionError("Cannot modulo by zero")
+        return TeaDec(other.value % self.value, self.mask)
+
+    def __and__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        return TeaDec(self.value & other.value, self.mask)
+
+    def __or__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        return TeaDec(self.value | other.value, self.mask)
+
+    def __xor__(self, other):
+        if isinstance(other, int):
+            other = TeaDec(other, self.mask)
+        elif not isinstance(other, TeaDec):
+            raise TypeError("Operand must be a TeaDec instance or an integer")
+        return TeaDec(self.value ^ other.value, self.mask)
+
+    def __rand__(self, other):
+        return self & other
+
+    def __ror__(self, other):
+        return self | other
+
+    def __rxor__(self, other):
+        return self ^ other
+
+    def __lshift__(self, other):
+        if not isinstance(other, int):
+            raise TypeError("Shift amount must be an integer")
+        return TeaDec((self.value << other) & self.mask, self.mask)
+
+    def __ilshift__(self, other):
+        if not isinstance(other, int):
+            raise TypeError("Shift amount must be an integer")
+        self.value = (self.value << other) & self.mask
+        return self
+
+    def __rlshift__(self, other):
+        if not isinstance(other, int):
+            raise TypeError("Shift amount must be an integer")
+        return TeaDec((other << self.value) & self.mask, self.mask)
+
+    def __rshift__(self, other):
+        if not isinstance(other, int):
+            raise TypeError("Shift amount must be an integer")
+        return TeaDec(self.value >> other, self.mask)
+
+    def __irshift__(self, other):
+        if not isinstance(other, int):
+            raise TypeError("Shift amount must be an integer")
+        self.value = self.value >> other
+        return self
+
+    def __rrshift__(self, other):
+        if not isinstance(other, int):
+            raise TypeError("Shift amount must be an integer")
+        return TeaDec(other >> self.value, self.mask)
+
+    def __str__(self):
+        return hex(self.value)
+    def setMask(self, mask):
+        self.mask = mask
+class Tealist:
+    def __init__(self, *args):
+        if isinstance(args[0], list):
+            args = args[0]
+        self.list = [TeaDec(arg) for arg in args]
+    
+    def __getitem__(self, index):
+        return self.list[index]
+    
+    def __setitem__(self, index, value):
+        if not isinstance(value, TeaDec):
+            raise TypeError("Value must be a TeaDec instance")
+        self.list[index] = value
+    
+    def __len__(self):
+        return len(self.list)
+    
+    def __iter__(self):
+        return iter(self.list)
+    
+    def __str__(self) -> str:
+        return " ".join(str(x) for x in self.list)
+    def setMask(self, mask):
+        for i in range(len(self.list)):
+            self.list[i].setMask(mask)
+# 定义一个类
 
 '''
 常用工具
@@ -202,6 +449,9 @@ def pl(a, b=None):
         else:
             print(f"{b}{{{result}}}")
 
+def phex(input_list):
+    res = ' '.join(f'0x{x:02x},' for x in input_list)[:-1]
+    print('['+res+ ']')
 
 #xor解题
 '''
@@ -324,19 +574,23 @@ def zini(length):
     return flag, out
 #z3检查终值
 def zcheck(f,flag):
-    from z3 import SolverObj,Solver
+    from z3 import SolverObj,Solver,sat,Or
     print(f.check())
     while(f.check()==sat):
-        condition = []
-        m = f.model()
-        p=""
-        for i in range(len(flag)):
-            p+=chr(int("%s" % (m[flag[i]])))
-            condition.append(flag[i]!=int("%s" % (m[flag[i]])))
-        print(p)
-        f.add(Or(condition))
+        try:
+            condition = []
+            m = f.model()
+            p=""
+            for i in range(len(flag)):
+                p+=chr(int("%s" % (m[flag[i]])))
+                condition.append(flag[i]!=int("%s" % (m[flag[i]])))
+            print(p)
+            f.add(Or(condition))
+        except:
+            pass
 #规定字符范围，可以提高速度
 def isflag(f,flag):
+    from z3 import And
     from z3 import SolverObj,Solver
     for i in range(len(flag)):
         f.add(And(flag[i]>31,flag[i]<129))
@@ -353,7 +607,7 @@ pyc代码/code对象文件转字节码
 '''
 
 def scode(inputfile,outputfile=None):
-    from marshal import loads
+    from marshal import marshal,loads
     from dis import dis
     fp = open(inputfile,"rb")
     data = fp.read()
@@ -455,7 +709,21 @@ def pcs(enc,min,max):
         pl(output)
 
 
+#凯撒密码/变异凯撒密码
+def caser(encoded_text:str,offset:int,adder:int=0):
+    upper_case = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    lower_case = list("abcdefghijklmnopqrstuvwxyz")
+    res = ""
 
+    for i in range(len(encoded_text)):
+        if encoded_text[i] in upper_case:
+            res += upper_case[(upper_case.index(encoded_text[i]) +offset+ adder*i) % 26]
+        elif encoded_text[i] in lower_case:
+            res += lower_case[(lower_case.index(encoded_text[i]) +offset+ adder*i) % 26]
+        else:
+            res += encoded_text[i]
+
+    return res
 
 
 
@@ -544,6 +812,7 @@ def Ssumdiff(sum,dif):
 #已知p^q和pq求p和q
 def Sxor_factor(n, p_xor_q):
     def xor_factor(n, p_xor_q):
+        import math
         tracked = set([(p, q) for p in [0, 1] for q in [0, 1]
                     if check_cong(1, p, q, n, p_xor_q)])
 
