@@ -449,9 +449,14 @@ def pl(a, b=None):
         else:
             print(f"{b}{{{result}}}")
 
-def phex(input_list):
+def phex(input_list,feature='py'):
+    if isinstance(input_list, int):
+        input_list = [input_list]
     res = ' '.join(f'0x{x:02x},' for x in input_list)[:-1]
-    print('['+res+ ']')
+    if feature=='py' or feature=='python':
+        print('['+res+ ']')
+    elif feature=='c' or feature=='c++':
+        print('{'+res+ '}')
 
 #xor解题
 '''
@@ -569,8 +574,8 @@ def oe(inpu):
 #如果遇到mod，好像只写8有问题，不理解
 def zini(length):
     from z3 import BitVec
-    flag = [BitVec('flag[%d]' % i, 9) for i in range(length)]
-    out = cal(flag)  
+    flag = [BitVec('flag[%d]' % i, 8) for i in range(length)]
+    out = flag
     return flag, out
 #z3检查终值
 def zcheck(f,flag):
@@ -600,6 +605,18 @@ def addchar(s,flag,i,char):
     from z3 import SolverObj,Solver
     s.add(flag[i]==ord(char))
 
+'''
+AES中从原S盒求逆S盒
+'''
+def getInvS(S):
+    new_contrary_sbox = [0]*256
+ 
+    for i in range(256):
+        line = (S[i]&0xf0)>>4
+        rol = S[i]&0xf
+        new_contrary_sbox[(line*16)+rol] = i
+    
+    phex (new_contrary_sbox)
 
 '''
 pyc代码/code对象文件转字节码
@@ -625,16 +642,38 @@ def scode(inputfile,outputfile=None):
 传入迷宫列表和行列，输出迷宫图
 
 '''
-def pmaze(maze,row,col):
-    length=len(maze)
-    block = row*col
-    for k in range(0,length,block):
+def pmaze(maze, row, col,width=1):
+    out = ""
+    length = len(maze)
+    block = row * col
+    
+    for k in range(0, length, block):
         for i in range(row): 
             for j in range(col):
-                print(str(maze[k+i*col+j]),end="")
+                # 格式化每个元素的输出，使其宽度一致
+                element = str(maze[k + i * col + j]).rjust(width)  # 使用rjust来对齐
+                out += element + " "  # 在输出中加入空格分隔
+                print(element, end="")
+            out += "\n"
             print()
         print()
+    return out
 
+def colorful_string(s):
+    import termcolor
+    color_map = {
+        '0': 'black',
+        '1': 'white',
+        '2': 'red',
+        '3': 'blue',
+        '4': 'green'
+    }
+    
+    colored_output = ""
+    for char in s:
+        color = color_map.get(char, 'yellow')  # 默认颜色
+        colored_output += termcolor.colored(char, color)
+    return colored_output
 
 
 
@@ -642,6 +681,18 @@ def pmaze(maze,row,col):
 以下是其它工具
 
 '''
+
+# 获取大小写字母和数字组合
+def get_char(kind):
+    import string
+    res = ''
+    if 'l' in kind:
+        res += string.ascii_lowercase
+    if 'u' in kind:
+        res += string.ascii_uppercase
+    if 'n' in kind:
+        res += string.digits
+    return res
 
 # 递归遍历
 class Maze_cracker:
